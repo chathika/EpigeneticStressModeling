@@ -1,15 +1,29 @@
+extensions [ csv ]
 breed [people person]
 people-own[
-  schizophrenia
-  ticks-hungry
-  epigenetic-risk
-  age
+  schizophrenic-risk ; boolean
+  risk-age
+  schizophrenia ; boolean
+  age ;; integer
+  stressed
+  ;;
+  father
+  mother
+  children
+  sex
 ]
-
+globals [FirstDegreeRR SecondDegreeRR number-of-births total-schizophrenia-inherited]
 to setup
   clear-all
-  create-people 100[
-    let id init-new-person
+  set FirstDegreeRR csv:from-file "FirstDegreeRR.csv"
+  set SecondDegreeRR csv:from-file "SecondDegreeRR.csv"
+  create-people 500[
+    let id init-new-person nobody nobody
+    if random-float 1 < 0.06 [
+      print "s"
+    set schizophrenia true
+      set color red
+    ]
   ]
   reset-ticks
 end
@@ -18,68 +32,119 @@ to go
   ask people [
     set age age + 1
     let no-food false
-    ifelse no-food [
-      set ticks-hungry ticks-hungry + 1
-    ][
-      set ticks-hungry ticks-hungry - 1
 
-    ]
-
-    if ticks-hungry < epigenetic-threshold [
-      set epigenetic-risk true
-    ]
   ]
-  ask people [
-    if (random-float 1 < want-kids-probability)  [
+  ;;;;; Population dynamics
+  ask people with [sex = "female"][
+    if (age > fertility-age and (length children ) < number-of-children-per-woman)  [
       make-kids
     ]
   ]
-  tick
-end
-
-to make-kids
-  let kids-get-effects false
-  if epigenetic-risk [
-   if random 100 < epigenetic-effects-transmision-rate [
-      set kids-get-effects true
-    ]
+  ask people [
+    if random-float 1 < mortality [die]
   ]
-  let kid-id 0
-  hatch-people 1 [
-    set kid-id init-new-person
-    if kids-get-effects [
+  ;;;;; show schizophrenia
+  ask people with [schizophrenic-risk][
+    if age = risk-age [
       set schizophrenia true
     ]
   ]
+  ;;;;;
+  ;;;;; Random walk
+  ask people [
+    fd 10
+  set heading random 360
+  ]
+  ;;;;;
+  tick
 end
 
-to-report init-new-person
-  set xcor random 360
-    set ycor random 360
-    set shape "person"
-    set color green
-    set ticks-hungry 0
-    set epigenetic-risk false
+;; Make children, and determine their methylation state
+to make-kids
+  let child-id 0
+  let selected-father min-one-of (people with [sex = "male"]) [distance myself]
+  hatch-people 1 [
+    set child-id init-new-person myself selected-father
+    set number-of-births number-of-births + 1
+  ]
+  set children lput (person child-id) children
+end
+
+to-report init-new-person [m f]
+  set xcor random world-width
+  set ycor random world-height
+  set shape "person"
+  set color green
+  set schizophrenic-risk false
+  set schizophrenia false
+  set children (list)
+  set sex ifelse-value (random-float 1 < 0.5) ["female"]["male"]
+  set mother m
+  set mother f
+  inherit-schizophrenic-risk
+  set size 5
   report who
 end
 
-to-report want-kids-probability
-  let sigma ifelse-value (age < modal-fertility-age) [sigma-before][sigma-after]
-  report base-level-fertility * exp (-1 * ((age - modal-fertility-age) / sigma) ^ 2)
+
+to-report fetility
+  ifelse schizophrenia [
+    report 0.39
+  ][
+  ;  let sigma ifelse-value (age < modal-fertility-age) [sigma-before][sigma-after]
+   ; report base-level-fertility * exp (-1 * ((age - modal-fertility-age) / sigma) ^ 2)
+  ]
 end
 
-to-report want-to-die
+to-report mortality
   report base-level-death * exp (((age - modal-death-age) / sigma-death) ^ 2)
+end
+
+;; people develop schizophrenia like this
+to inherit-schizophrenic-risk
+  ;; Check first degree
+  let RR 1
+  if father != 0 and father != nobody and [schizophrenia] of father [
+    set RR ifelse-value  (sex = "male") [ item 5 (item 1 FirstDegreeRR)][RR]
+    set RR ifelse-value  (sex = "female") [ item 5 (item 2 FirstDegreeRR)][RR]
+  ]
+  if mother != 0 and mother != nobody and [schizophrenia] of mother [
+    set RR ifelse-value  (sex = "male") [ item 5 (item 3 FirstDegreeRR)][RR]
+    set RR ifelse-value  (sex = "female") [ item 5 (item 4 FirstDegreeRR)][RR]
+  ]
+  let probSchizo base-schizophrenia-inheritability * RR
+  if random-float 1 < probSchizo [
+   set schizophrenic-risk true
+    set color yellow
+    set risk-age age-to-exhibit-schizophrenia
+    set total-schizophrenia-inherited total-schizophrenia-inherited + 1
+  ]
+  ;if random-float 1 < stressed * ifelse-value epigenetic-risk [relative-risk-of-manifestation][1] [
+   ;set schizophrenia true
+   ;set color red
+  ;]
+end
+to-report age-to-exhibit-schizophrenia
+  let age-to-exhibit 0
+  set age-to-exhibit ifelse-value (sex = "female" ) [random-normal 41.9 19.5] [age-to-exhibit] ; Chou et al , 2017
+  set age-to-exhibit ifelse-value (sex = "male" ) [random-normal 41.2 19.7] [age-to-exhibit]
+  report age-to-exhibit
+end
+to Expose-to-Stress
+  ask people [
+    set stressed true
+
+  ]
 end
 @#$#@#$#@
 GRAPHICS-WINDOW
-210
-10
-647
-448
+161
+11
+994
+845
 -1
 -1
-13.0
+4.1045
 1
 10
 1
@@ -89,10 +154,10 @@ GRAPHICS-WINDOW
 1
 1
 1
--16
-16
--16
-16
+-100
+100
+-100
+100
 0
 0
 1
@@ -133,27 +198,138 @@ NIL
 NIL
 1
 
+PLOT
+1121
+24
+1465
+203
+Schizophrenic Percentage
+NIL
+NIL
+0.0
+10.0
+0.0
+10.0
+true
+true
+"" ""
+PENS
+"Schizophrenia" 1.0 2 -2674135 true "" "plot (count people with [schizophrenia] / count people) * 100"
+"At risk" 1.0 0 -14070903 true "" "plot (count people with [schizophrenic-risk] / count people) * 100"
+
 SLIDER
-15
-192
-187
-225
-epigenetic-threshold
-epigenetic-threshold
+1016
+657
+1237
+690
+number-of-children-per-woman
+number-of-children-per-woman
 0
 100
-50.0
+3.0
+1
+1
+NIL
+HORIZONTAL
+
+SLIDER
+1325
+599
+1497
+632
+base-level-death
+base-level-death
+0
+100
+0.039
+1
+1
+NIL
+HORIZONTAL
+
+SLIDER
+1325
+631
+1497
+664
+modal-death-age
+modal-death-age
+0
+100
+33.388
+1
+1
+NIL
+HORIZONTAL
+
+SLIDER
+1325
+663
+1497
+696
+sigma-death
+sigma-death
+-100
+100
+-27.569
+1
+1
+NIL
+HORIZONTAL
+
+SLIDER
+1033
+556
+1243
+589
+relative-risk-of-manifestation
+relative-risk-of-manifestation
+0
+100
+2.0
+1
+1
+NIL
+HORIZONTAL
+
+BUTTON
+37
+195
+151
+228
+NIL
+Expose-to-Stress
+NIL
+1
+T
+OBSERVER
+NIL
+NIL
+NIL
+NIL
+1
+
+SLIDER
+1037
+516
+1264
+549
+base-schizophrenia-inheritability
+base-schizophrenia-inheritability
+0
+100
+0.006
 1
 1
 NIL
 HORIZONTAL
 
 PLOT
-767
-47
-1313
-419
-epigenetic-risk
+1125
+206
+1468
+388
+Average Number of Children
 NIL
 NIL
 0.0
@@ -164,157 +340,116 @@ true
 false
 "" ""
 PENS
-"default" 1.0 0 -16777216 true "" "plot count turtles with [epigenetic-risk = true]"
+"default" 1.0 0 -16777216 true "" "plot mean [length children ] of  turtles"
 
-SLIDER
-4
-474
-248
-507
-epigenetic-effects-transmision-rate
-epigenetic-effects-transmision-rate
-0
-100
-50.0
-1
-1
+PLOT
+1469
+188
+1687
+357
+Entire Population
 NIL
-HORIZONTAL
+NIL
+0.0
+10.0
+0.0
+10.0
+true
+false
+"" ""
+PENS
+"default" 1.0 0 -16777216 true "" "plot count turtles"
 
 SLIDER
-61
-548
-233
-581
+1043
+619
+1215
+652
 fertility-age
 fertility-age
 0
 100
-20.0
+29.0
 1
 1
 NIL
 HORIZONTAL
 
-SLIDER
-67
-620
-239
-653
-kids-in-lifetime
-kids-in-lifetime
-0
-100
-2.0
-1
-1
+PLOT
+1476
+360
+1676
+510
+Births
 NIL
-HORIZONTAL
+NIL
+0.0
+10.0
+0.0
+10.0
+true
+false
+"" ""
+PENS
+"default" 1.0 0 -16777216 true "" "plot number-of-births"
 
-SLIDER
-328
-633
-500
-666
-modal-fertility-age
-modal-fertility-age
-0
-100
-50.0
-1
-1
+PLOT
+1466
+22
+1666
+172
+Schizophrenia Inherited
 NIL
-HORIZONTAL
+NIL
+0.0
+10.0
+0.0
+10.0
+true
+false
+"" ""
+PENS
+"default" 1.0 0 -16777216 true "" "plot total-schizophrenia-inherited"
 
-SLIDER
-335
-688
-507
-721
-sigma-before
-sigma-before
-0
-100
-50.0
-1
-1
+PLOT
+1225
+416
+1425
+566
+Schizophrenia Count
 NIL
-HORIZONTAL
+NIL
+0.0
+10.0
+0.0
+10.0
+true
+false
+"" ""
+PENS
+"default" 1.0 0 -16777216 true "" "plot count people with [schizophrenia]"
 
-SLIDER
-339
-739
-511
-772
-sigma-after
-sigma-after
-0
-100
-50.0
+MONITOR
+1229
+732
+1355
+777
+Schizophrenia Count
+count people with [schizophrenia]
+17
 1
-1
-NIL
-HORIZONTAL
+11
 
-SLIDER
-330
-575
-502
-608
-base-level-fertility
-base-level-fertility
-0
-100
-50.0
+MONITOR
+1411
+735
+1499
+780
+At Risk Count
+count people with [schizophrenic-risk]
+17
 1
-1
-NIL
-HORIZONTAL
-
-SLIDER
-621
-584
-793
-617
-base-level-death
-base-level-death
-0
-100
-50.0
-1
-1
-NIL
-HORIZONTAL
-
-SLIDER
-623
-644
-795
-677
-modal-death-age
-modal-death-age
-0
-100
-50.0
-1
-1
-NIL
-HORIZONTAL
-
-SLIDER
-625
-708
-797
-741
-sigma-death
-sigma-death
-0
-100
-50.0
-1
-1
-NIL
-HORIZONTAL
+11
 
 @#$#@#$#@
 ## WHAT IS IT?
@@ -658,7 +793,7 @@ false
 Polygon -7500403 true true 270 75 225 30 30 225 75 270
 Polygon -7500403 true true 30 75 75 30 270 225 225 270
 @#$#@#$#@
-NetLogo 6.0.3
+NetLogo 6.0.2
 @#$#@#$#@
 @#$#@#$#@
 @#$#@#$#@
