@@ -12,19 +12,16 @@ people-own[
   children
   sex
 ]
-globals [FirstDegreeRR SecondDegreeRR number-of-births total-schizophrenia-inherited]
+globals [FirstDegreeRR SecondDegreeRR number-of-births total-schizophrenia-inherited RR-stress-multiplier]
 to setup
   clear-all
   set FirstDegreeRR csv:from-file "FirstDegreeRR.csv"
   set SecondDegreeRR csv:from-file "SecondDegreeRR.csv"
-  create-people 500[
-    let id init-new-person nobody nobody
-    if random-float 1 < 0.06 [
-      print "s"
-    set schizophrenia true
-      set color red
-    ]
-  ]
+  set RR-stress-multiplier 1
+  init-population
+  set p1 0.03918391838669777
+  set p2 33.93622589111328
+  set p3 -27.331884384155273
   reset-ticks
 end
 
@@ -47,6 +44,7 @@ to go
   ask people with [schizophrenic-risk][
     if age = risk-age [
       set schizophrenia true
+      set color red
     ]
   ]
   ;;;;;
@@ -75,6 +73,7 @@ to-report init-new-person [m f]
   set ycor random world-height
   set shape "person"
   set color green
+  set stressed false
   set schizophrenic-risk false
   set schizophrenia false
   set children (list)
@@ -97,7 +96,7 @@ to-report fetility
 end
 
 to-report mortality
-  report base-level-death * exp (((age - modal-death-age) / sigma-death) ^ 2)
+  report p1 * exp (((age - p2) / p3) ^ 2)
 end
 
 ;; people develop schizophrenia like this
@@ -111,6 +110,12 @@ to inherit-schizophrenic-risk
   if mother != 0 and mother != nobody and [schizophrenia] of mother [
     set RR ifelse-value  (sex = "male") [ item 5 (item 3 FirstDegreeRR)][RR]
     set RR ifelse-value  (sex = "female") [ item 5 (item 4 FirstDegreeRR)][RR]
+  ]
+  if mother != 0 and mother != nobody and [schizophrenia] of mother and father != 0 and father != nobody and [schizophrenia] of father [
+    set RR 14.66
+  ]
+  if stressed [
+    set RR RR * RR-stress-multiplier
   ]
   let probSchizo base-schizophrenia-inheritability * RR
   if random-float 1 < probSchizo [
@@ -127,24 +132,50 @@ end
 to-report age-to-exhibit-schizophrenia
   let age-to-exhibit 0
   set age-to-exhibit ifelse-value (sex = "female" ) [random-normal 41.9 19.5] [age-to-exhibit] ; Chou et al , 2017
-  set age-to-exhibit ifelse-value (sex = "male" ) [random-normal 41.2 19.7] [age-to-exhibit]
+  set age-to-exhibit ifelse-value (sex = "male" ) [random-normal 41.2 19.7] [age-to-exhibit] ;
   report age-to-exhibit
 end
 to Expose-to-Stress
+  set p1 0.16069729626178741
+  set p2 -22.134449005126953
+  set p3 -69.08554077148438
+  set RR-stress-multiplier 2 ; Famine paper
   ask people [
     set stressed true
 
+  ]
+end
+
+to init-population
+  let NetherlandsInitialPopulationAges csv:from-file "NetherlandsInitialPopulationAges.csv"
+  set NetherlandsInitialPopulationAges but-first NetherlandsInitialPopulationAges
+  let total-pop 0
+  foreach NetherlandsInitialPopulationAges [age-group ->
+    set total-pop total-pop + (item 2 age-group )
+  ]
+  let scale-factor 1000 / scale
+  foreach NetherlandsInitialPopulationAges [age-group ->
+    let group-size (item 2 age-group) * scale-factor
+    create-people group-size[
+      let id init-new-person nobody nobody
+      ask person id [set age  item 0 age-group + (random (item 1 age-group - item 0 age-group))]
+      if random-float 1 < 0.002 [
+        print "s"
+        set schizophrenia true
+        set color red
+      ]
+    ]
   ]
 end
 @#$#@#$#@
 GRAPHICS-WINDOW
 161
 11
-994
-845
+781
+632
 -1
 -1
-4.1045
+3.045
 1
 10
 1
@@ -199,10 +230,10 @@ NIL
 1
 
 PLOT
-1121
-24
-1465
-203
+791
+32
+1135
+211
 Schizophrenic Percentage
 NIL
 NIL
@@ -218,10 +249,10 @@ PENS
 "At risk" 1.0 0 -14070903 true "" "plot (count people with [schizophrenic-risk] / count people) * 100"
 
 SLIDER
-1016
-657
-1237
-690
+809
+684
+1030
+717
 number-of-children-per-woman
 number-of-children-per-woman
 0
@@ -233,55 +264,55 @@ NIL
 HORIZONTAL
 
 SLIDER
-1325
-599
-1497
-632
-base-level-death
-base-level-death
+1170
+540
+1342
+573
+p1
+p1
 0
 100
-0.039
+0.03918391838669777
 1
 1
 NIL
 HORIZONTAL
 
 SLIDER
-1325
-631
-1497
-664
-modal-death-age
-modal-death-age
+1170
+572
+1342
+605
+p2
+p2
 0
 100
-33.388
+33.93622589111328
 1
 1
 NIL
 HORIZONTAL
 
 SLIDER
-1325
-663
-1497
-696
-sigma-death
-sigma-death
+1170
+604
+1342
+637
+p3
+p3
 -100
 100
--27.569
+-27.331884384155273
 1
 1
 NIL
 HORIZONTAL
 
 SLIDER
-1033
-556
-1243
-589
+821
+608
+1031
+641
 relative-risk-of-manifestation
 relative-risk-of-manifestation
 0
@@ -310,10 +341,10 @@ NIL
 1
 
 SLIDER
-1037
-516
-1264
-549
+816
+573
+1043
+606
 base-schizophrenia-inheritability
 base-schizophrenia-inheritability
 0
@@ -325,10 +356,10 @@ NIL
 HORIZONTAL
 
 PLOT
-1125
-206
-1468
-388
+792
+209
+1135
+391
 Average Number of Children
 NIL
 NIL
@@ -343,10 +374,10 @@ PENS
 "default" 1.0 0 -16777216 true "" "plot mean [length children ] of  turtles"
 
 PLOT
-1469
-188
-1687
-357
+1156
+198
+1374
+367
 Entire Population
 NIL
 NIL
@@ -361,25 +392,25 @@ PENS
 "default" 1.0 0 -16777216 true "" "plot count turtles"
 
 SLIDER
-1043
-619
-1215
-652
+836
+646
+1008
+679
 fertility-age
 fertility-age
 0
 100
-29.0
+25.0
 1
 1
 NIL
 HORIZONTAL
 
 PLOT
-1476
-360
-1676
-510
+1163
+370
+1363
+520
 Births
 NIL
 NIL
@@ -394,10 +425,10 @@ PENS
 "default" 1.0 0 -16777216 true "" "plot number-of-births"
 
 PLOT
-1466
-22
-1666
-172
+1153
+32
+1353
+182
 Schizophrenia Inherited
 NIL
 NIL
@@ -412,10 +443,10 @@ PENS
 "default" 1.0 0 -16777216 true "" "plot total-schizophrenia-inherited"
 
 PLOT
-1225
-416
-1425
-566
+792
+390
+1134
+564
 Schizophrenia Count
 NIL
 NIL
@@ -430,10 +461,10 @@ PENS
 "default" 1.0 0 -16777216 true "" "plot count people with [schizophrenia]"
 
 MONITOR
-1229
-732
-1355
-777
+334
+652
+460
+697
 Schizophrenia Count
 count people with [schizophrenia]
 17
@@ -441,15 +472,50 @@ count people with [schizophrenia]
 11
 
 MONITOR
-1411
-735
-1499
-780
+516
+655
+604
+700
 At Risk Count
 count people with [schizophrenic-risk]
 17
 1
 11
+
+PLOT
+1148
+651
+1348
+801
+Age Distribution
+NIL
+NIL
+0.0
+10.0
+0.0
+10.0
+true
+false
+"" ""
+PENS
+"default" 1.0 0 -16777216 true "" "plot mean [age] of people"
+"pen-1" 1.0 0 -7500403 true "" "plot max [age] of people"
+"pen-2" 1.0 0 -9276814 true "" "plot min [age] of people"
+
+SLIDER
+836
+721
+1008
+754
+scale
+scale
+0
+10000
+10000.0
+1
+1
+NIL
+HORIZONTAL
 
 @#$#@#$#@
 ## WHAT IS IT?
