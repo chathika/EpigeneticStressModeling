@@ -1,150 +1,151 @@
 extensions [ csv ]
 breed [people person]
+__includes ["PopulationDynamics.nls"]
 people-own[
-  schizophrenic-risk ; boolean
-  risk-age
-  schizophrenia ; boolean
+  ;schizophrenic-risk ; boolean
+  ;risk-age
+  ;schizophrenia ; boolean
   age ;; integer
-  stressed
+  ;stressed
   ;;
   father
   mother
+  siblings
   children
   sex
+  births-this-tick
 ]
-globals [FirstDegreeRR SecondDegreeRR number-of-births total-schizophrenia-inherited RR-stress-multiplier]
+patches-own [region]
+globals [;FirstDegreeRR SecondDegreeRR
+  year
+  month
+  number-of-births
+  annual-fertility
+  annual-mortality
+  ;total-schizophrenia-inherited RR-stress-multiplier
+]
 to setup
   clear-all
-  set FirstDegreeRR csv:from-file "FirstDegreeRR.csv"
-  set SecondDegreeRR csv:from-file "SecondDegreeRR.csv"
-  set RR-stress-multiplier 1
+  ;set FirstDegreeRR csv:from-file "data/FirstDegreeRR.csv"
+  ;set SecondDegreeRR csv:from-file "data/SecondDegreeRR.csv"
+  ;set RR-stress-multiplier 1
   init-population
-  set p1 0.03918391838669777
-  set p2 33.93622589111328
-  set p3 -27.331884384155273
+  ;set p1 0.03918391838669777
+  ;set p2 33.93622589111328
+  ;set p3 -27.331884384155273
+  ask turtles [set siblings (list)]
+  createRegions
   reset-ticks
+  set year 1940
+  set month 1
+  set annual-fertility read-fertility-data
+  set annual-mortality read-mortality-data
+end
+
+to createRegions
+  ask patches with [pycor < (world-height / 3 - world-height / 2)] [set region "SouthControl" set pcolor yellow - 0.3]
+  ask patches with [pycor > (world-height / 3 - world-height / 2) and pycor < (2 * world-height / 3 - world-height / 2)] [set region "Famine" set pcolor blue - 0.3]
+  ask patches with [pycor > (2 * world-height / 3 - world-height / 2)] [set region "NorthControl" set pcolor yellow - 0.3]
 end
 
 to go
-  ask people [
-    set age age + 1
-    let no-food false
 
-  ]
   ;;;;; Population dynamics
-  ask people with [sex = "female"][
-    if (age > fertility-age and (length children ) < number-of-children-per-woman)  [
-      make-kids
-    ]
-  ]
-  ask people [
-    if random-float 1 < mortality [die]
-  ]
-  ;;;;; show schizophrenia
-  ask people with [schizophrenic-risk][
-    if age = risk-age [
-      set schizophrenia true
-      set color red
-    ]
-  ]
-  ;;;;;
-  ;;;;; Random walk
-  ask people [
-    fd 10
-  set heading random 360
-  ]
+  runPopulationDynamics
+  move-around
   ;;;;;
   tick
+  update-time-and-age
+  if (year = 2018 or not any? People) [stop]
 end
 
-;; Make children, and determine their methylation state
-to make-kids
-  let child-id 0
-  let selected-father min-one-of (people with [sex = "male"]) [distance myself]
-  hatch-people 1 [
-    set child-id init-new-person myself selected-father
-    set number-of-births number-of-births + 1
+;; Observer procedure
+to update-time-and-age
+  ifelse month < 12 [set month month + 1][
+    set month 1
+    set year year + 1
+    ask people [
+      set age age + 1
+    ]
   ]
-  set children lput (person child-id) children
 end
 
+
+
+to move-around
+  ;;;;; Random walk
+  ask people [
+    move-to one-of patches with [region = [[region] of patch-here] of myself]
+    ;set heading random 360
+    ;let current-region [region] of patch-here
+    ;while [[region] of patch-ahead 1 = current-region][fd 1]
+  ]
+end
 to-report init-new-person [m f]
   set xcor random world-width
   set ycor random world-height
   set shape "person"
   set color green
-  set stressed false
-  set schizophrenic-risk false
-  set schizophrenia false
+  ;set stressed false
+  ;set schizophrenic-risk false
+  ;set schizophrenia false
   set children (list)
   set sex ifelse-value (random-float 1 < 0.5) ["female"]["male"]
   set mother m
   set mother f
-  inherit-schizophrenic-risk
+  ;inherit-schizophrenic-risk
   set size 5
   report who
 end
 
 
-to-report fetility
-  ifelse schizophrenia [
-    report 0.39
-  ][
-  ;  let sigma ifelse-value (age < modal-fertility-age) [sigma-before][sigma-after]
-   ; report base-level-fertility * exp (-1 * ((age - modal-fertility-age) / sigma) ^ 2)
-  ]
-end
-
-to-report mortality
-  report p1 * exp (((age - p2) / p3) ^ 2)
-end
 
 ;; people develop schizophrenia like this
-to inherit-schizophrenic-risk
-  ;; Check first degree
-  let RR 1
-  if father != 0 and father != nobody and [schizophrenia] of father [
-    set RR ifelse-value  (sex = "male") [ item 5 (item 1 FirstDegreeRR)][RR]
-    set RR ifelse-value  (sex = "female") [ item 5 (item 2 FirstDegreeRR)][RR]
-  ]
-  if mother != 0 and mother != nobody and [schizophrenia] of mother [
-    set RR ifelse-value  (sex = "male") [ item 5 (item 3 FirstDegreeRR)][RR]
-    set RR ifelse-value  (sex = "female") [ item 5 (item 4 FirstDegreeRR)][RR]
-  ]
-  if mother != 0 and mother != nobody and [schizophrenia] of mother and father != 0 and father != nobody and [schizophrenia] of father [
-    set RR 14.66
-  ]
-  if stressed [
-    set RR RR * RR-stress-multiplier
-  ]
-  let probSchizo base-schizophrenia-inheritability * RR
-  if random-float 1 < probSchizo [
-   set schizophrenic-risk true
-    set color yellow
-    set risk-age age-to-exhibit-schizophrenia
-    set total-schizophrenia-inherited total-schizophrenia-inherited + 1
-  ]
-  ;if random-float 1 < stressed * ifelse-value epigenetic-risk [relative-risk-of-manifestation][1] [
-   ;set schizophrenia true
-   ;set color red
-  ;]
-end
-to-report age-to-exhibit-schizophrenia
-  let age-to-exhibit 0
-  set age-to-exhibit ifelse-value (sex = "female" ) [random-normal 41.9 19.5] [age-to-exhibit] ; Chou et al , 2017
-  set age-to-exhibit ifelse-value (sex = "male" ) [random-normal 41.2 19.7] [age-to-exhibit] ;
-  report age-to-exhibit
-end
-to Expose-to-Stress
-  set p1 0.16069729626178741
-  set p2 -22.134449005126953
-  set p3 -69.08554077148438
-  set RR-stress-multiplier 2 ; Famine paper
-  ask people [
-    set stressed true
-
-  ]
-end
+;to inherit-schizophrenic-risk
+;  ;; Check first degree
+;  let RR 1
+;  if father != 0 and father != nobody and [schizophrenia] of father [
+;    set RR ifelse-value  (sex = "male") [ item 5 (item 1 FirstDegreeRR)][RR]
+;    set RR ifelse-value  (sex = "female") [ item 5 (item 2 FirstDegreeRR)][RR]
+;  ]
+;  if mother != 0 and mother != nobody and [schizophrenia] of mother [
+;    set RR ifelse-value  (sex = "male") [ item 5 (item 3 FirstDegreeRR)][RR]
+;    set RR ifelse-value  (sex = "female") [ item 5 (item 4 FirstDegreeRR)][RR]
+;  ]
+;  if mother != 0 and mother != nobody and [schizophrenia] of mother and father != 0 and father != nobody and [schizophrenia] of father [
+;    set RR 14.66
+;  ]
+;  if stressed [
+;    set RR RR * RR-stress-multiplier
+;  ]
+;  let probSchizo base-schizophrenia-inheritability * RR
+;  if random-float 1 < probSchizo [
+;   set schizophrenic-risk true
+;    set color yellow
+;    set risk-age age-to-exhibit-schizophrenia
+;    set total-schizophrenia-inherited total-schizophrenia-inherited + 1
+;  ]
+;  ;if random-float 1 < stressed * ifelse-value epigenetic-risk [relative-risk-of-manifestation][1] [
+;   ;set schizophrenia true
+;   ;set color red
+;  ;]
+;end
+;to-report age-to-exhibit-schizophrenia
+;  let age-to-exhibit 0
+;  set age-to-exhibit ifelse-value (sex = "female" ) [random-normal 41.9 19.5] [age-to-exhibit] ; Chou et al , 2017
+;  set age-to-exhibit ifelse-value (sex = "male" ) [random-normal 41.2 19.7] [age-to-exhibit] ;
+;  report age-to-exhibit
+;end
+;to Expose-to-Stress
+;  set p1 0.16069729626178741
+;  set p2 -22.134449005126953
+;  set p3 -69.08554077148438
+;  set RR-stress-multiplier 2 ; Famine paper
+;  ask people [
+;    set stressed true
+;
+;  ]
+;end
 
 to init-population
   let NetherlandsInitialPopulationAges csv:from-file "NetherlandsInitialPopulationAges.csv"
@@ -159,11 +160,6 @@ to init-population
     create-people group-size[
       let id init-new-person nobody nobody
       ask person id [set age  item 0 age-group + (random (item 1 age-group - item 0 age-group))]
-      if random-float 1 < 0.002 [
-        print "s"
-        set schizophrenia true
-        set color red
-      ]
     ]
   ]
 end
@@ -171,11 +167,11 @@ end
 GRAPHICS-WINDOW
 161
 11
-781
-632
+571
+622
 -1
 -1
-3.045
+2.0
 1
 10
 1
@@ -187,8 +183,8 @@ GRAPHICS-WINDOW
 1
 -100
 100
--100
-100
+-150
+150
 0
 0
 1
@@ -213,10 +209,10 @@ NIL
 1
 
 BUTTON
-65
-132
-128
-165
+61
+102
+124
+135
 NIL
 go
 T
@@ -229,90 +225,11 @@ NIL
 NIL
 1
 
-PLOT
-791
-32
-1135
-211
-Schizophrenic Percentage
-NIL
-NIL
-0.0
-10.0
-0.0
-10.0
-true
-true
-"" ""
-PENS
-"Schizophrenia" 1.0 2 -2674135 true "" "plot (count people with [schizophrenia] / count people) * 100"
-"At risk" 1.0 0 -14070903 true "" "plot (count people with [schizophrenic-risk] / count people) * 100"
-
 SLIDER
-809
-684
-1030
-717
-number-of-children-per-woman
-number-of-children-per-woman
-0
-100
-3.0
-1
-1
-NIL
-HORIZONTAL
-
-SLIDER
-1170
-540
-1342
-573
-p1
-p1
-0
-100
-0.03918391838669777
-1
-1
-NIL
-HORIZONTAL
-
-SLIDER
-1170
-572
-1342
-605
-p2
-p2
-0
-100
-33.93622589111328
-1
-1
-NIL
-HORIZONTAL
-
-SLIDER
-1170
-604
-1342
-637
-p3
-p3
--100
-100
--27.331884384155273
-1
-1
-NIL
-HORIZONTAL
-
-SLIDER
-821
-608
-1031
-641
+158
+871
+368
+904
 relative-risk-of-manifestation
 relative-risk-of-manifestation
 0
@@ -323,28 +240,11 @@ relative-risk-of-manifestation
 NIL
 HORIZONTAL
 
-BUTTON
-37
-195
-151
-228
-NIL
-Expose-to-Stress
-NIL
-1
-T
-OBSERVER
-NIL
-NIL
-NIL
-NIL
-1
-
 SLIDER
-816
-573
-1043
-606
+153
+836
+380
+869
 base-schizophrenia-inheritability
 base-schizophrenia-inheritability
 0
@@ -356,11 +256,11 @@ NIL
 HORIZONTAL
 
 PLOT
-792
-209
-1135
-391
-Average Number of Children
+605
+14
+968
+211
+Number of Children
 NIL
 NIL
 0.0
@@ -372,45 +272,32 @@ false
 "" ""
 PENS
 "default" 1.0 0 -16777216 true "" "plot mean [length children ] of  turtles"
+"pen-1" 1.0 0 -7500403 true "" "plot max [length children ] of  turtles"
+"pen-2" 1.0 0 -9276814 true "" "plot min [length children ] of  turtles"
 
 PLOT
-1156
-198
-1374
-367
+980
+18
+1198
+187
 Entire Population
 NIL
 NIL
 0.0
 10.0
-0.0
-10.0
+7000.0
+10000.0
 true
 false
 "" ""
 PENS
-"default" 1.0 0 -16777216 true "" "plot count turtles"
-
-SLIDER
-836
-646
-1008
-679
-fertility-age
-fertility-age
-0
-100
-25.0
-1
-1
-NIL
-HORIZONTAL
+"default" 1.0 2 -16777216 true "" "plot count turtles"
 
 PLOT
-1163
-370
-1363
-520
+987
+190
+1187
+340
 Births
 NIL
 NIL
@@ -422,71 +309,13 @@ true
 false
 "" ""
 PENS
-"default" 1.0 0 -16777216 true "" "plot number-of-births"
+"default" 1.0 2 -16777216 true "" "plot sum [births-this-tick] of people"
 
 PLOT
-1153
-32
-1353
-182
-Schizophrenia Inherited
-NIL
-NIL
-0.0
-10.0
-0.0
-10.0
-true
-false
-"" ""
-PENS
-"default" 1.0 0 -16777216 true "" "plot total-schizophrenia-inherited"
-
-PLOT
-792
-390
-1134
-564
-Schizophrenia Count
-NIL
-NIL
-0.0
-10.0
-0.0
-10.0
-true
-false
-"" ""
-PENS
-"default" 1.0 0 -16777216 true "" "plot count people with [schizophrenia]"
-
-MONITOR
-334
-652
-460
-697
-Schizophrenia Count
-count people with [schizophrenia]
-17
-1
-11
-
-MONITOR
-516
-655
-604
-700
-At Risk Count
-count people with [schizophrenic-risk]
-17
-1
-11
-
-PLOT
-1148
-651
-1348
-801
+972
+471
+1172
+621
 Age Distribution
 NIL
 NIL
@@ -503,19 +332,41 @@ PENS
 "pen-2" 1.0 0 -9276814 true "" "plot min [age] of people"
 
 SLIDER
-836
-721
-1008
-754
+648
+248
+820
+281
 scale
 scale
 0
 10000
-10000.0
+1000.0
 1
 1
-NIL
+th
 HORIZONTAL
+
+MONITOR
+16
+153
+73
+198
+NIL
+year
+17
+1
+11
+
+MONITOR
+73
+153
+130
+198
+NIL
+month
+17
+1
+11
 
 @#$#@#$#@
 ## WHAT IS IT?
@@ -859,7 +710,7 @@ false
 Polygon -7500403 true true 270 75 225 30 30 225 75 270
 Polygon -7500403 true true 30 75 75 30 270 225 225 270
 @#$#@#$#@
-NetLogo 6.0.2
+NetLogo 6.0.4
 @#$#@#$#@
 @#$#@#$#@
 @#$#@#$#@
