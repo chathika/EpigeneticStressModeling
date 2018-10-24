@@ -1,4 +1,4 @@
-NetherlandsDeathsByAge_1000 = read.csv("NetherlandsDeathsByAge.csv")
+NetherlandsDeathsByAge_1000 = read.csv("data/NetherlandsDeathsByAge.csv")
 NetherlandsPopulationByAge_1000 = read.csv("NetherlandsPopulationByAge.csv")
 
 
@@ -46,3 +46,27 @@ probDeath.predicted.1945 <- predict(exponential.model.1945,list(ageGroup.1945 = 
 plot(ageGroup.1945, probDeath.1945,pch=16)
 
 lines(age_values.1945,probDeath.predicted.1945,lwd=2, col = "red", xlab = "Age Group", ylab = "Prob Death")
+
+
+
+########################using aggregated Fertility Data##############################
+fertility19402017 = read.csv("data/FertilityNetherlandsFromMaria.csv")
+fertility19402017 = aggregate(fertility19402017[,3], list(fertility19402017$TimeMid, fertility19402017$AgeGroup), mean)
+colnames(fertility19402017) = c("Year", "AgeGroup", "AnnualFertilityRate.BirthsPerThousandWomen")
+ggplot(fertility19402017, aes(Year, AnnualFertilityRate.BirthsPerThousandWomen)) + geom_point() + facet_grid(.~AgeGroup) + ylab("Fertility Rate")
+write.csv(fertility19402017,"Data/NetherlandsFertility1940to2017.csv")
+
+########################Stein and Susser 1975 study on Dutch Famine#################
+SteinAndSusser1975 = read.csv("data/SteinAndSusser1975Table3.csv", header = TRUE)
+SteinAndSusser1975$FamineArea.TotalBirths = SteinAndSusser1975$FamineArea.MaleBirths + SteinAndSusser1975$FamineArea.FemaleBirths
+SteinAndSusser1975$NorthControlArea.TotalBirths = SteinAndSusser1975$NorthControlArea.MaleBirths + SteinAndSusser1975$NorthControlArea.FemaleBirths
+SteinAndSusser1975$SouthControlArea.TotalBirths = SteinAndSusser1975$SouthControlArea.MaleBirths + SteinAndSusser1975$SouthControlArea.FemaleBirths
+library(reshape2)
+SteinAndSusser1975.TotalBirths = melt(subset(SteinAndSusser1975, select = c("Date", "FamineArea.TotalBirths", "NorthControlArea.TotalBirths", "SouthControlArea.TotalBirths")), id.vars = c("Date"), value.name = "TotalBirths")
+ggplot(SteinAndSusser1975.TotalBirths, aes(Date, TotalBirths)) + geom_point() + facet_grid(.~variable) + theme(axis.text.x = element_text(angle = 90,hjust = -1))#+scale_x_datetime(labels = date_format("%b")
+##########################Deaths by Age#############################################
+
+NetherlandsDeathsByAge_1000 = na.omit(melt(NetherlandsDeathsByAge_1000, id.vars = c("Year")))
+colnames(NetherlandsDeathsByAge_1000) = c("Year","AgeGroup","AnnualMortalityRate.DeathsPerThousandPeople")
+NetherlandsDeathsByAge_1000$AgeGroup = substr(NetherlandsDeathsByAge_1000$AgeGroup, 2,6)
+write.csv(NetherlandsDeathsByAge_1000$AgeGroup, "NetherlandsDeathsByAge_1000$AgeGroup.csv")
