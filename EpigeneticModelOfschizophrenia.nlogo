@@ -33,6 +33,10 @@ to setup
   ;set SecondDegreeRR csv:from-file "data/SecondDegreeRR.csv"
   ;set RR-stress-multiplier 1
   createRegions
+  set year 1940
+  set month 1
+  set annual-fertility read-fertility-data
+  set annual-mortality read-mortality-data
   init-population
   ;set p1 0.03918391838669777
   ;set p2 33.93622589111328
@@ -40,10 +44,7 @@ to setup
   ask turtles [set siblings (list)]
 
   reset-ticks
-  set year 1940
-  set month 1
-  set annual-fertility read-fertility-data
-  set annual-mortality read-mortality-data
+
 end
 
 to createRegions
@@ -192,6 +193,17 @@ to init-population
     ]
 
   ]
+  ;; assign parents assuming
+  ask people with [mother = nobody or father = nobody][
+     let _potential-mothers other people with [sex = "female" and age > 16 + [age] of myself]
+     set mother one-of _potential-mothers ;with [(random-float 1 < fertility / (1000 * 12))]
+     let _potential-fathers other people with [sex = "male" and age > 16 + [age] of myself]
+     set father one-of _potential-mothers ;with [(random-float 1 < fertility / (1000 * 12))]
+
+   let id init-new-person mother father
+  ]
+
+
 end
 @#$#@#$#@
 GRAPHICS-WINDOW
@@ -514,7 +526,7 @@ INPUTBOX
 73
 257
 stop-year
-1950.0
+1970.0
 1
 0
 Number
@@ -538,6 +550,25 @@ Model Parameters
 14
 0.0
 1
+
+PLOT
+904
+600
+1419
+750
+RR
+Time
+RR
+0.0
+10.0
+0.0
+1.0
+true
+true
+"" ""
+PENS
+"RRParents" 1.0 0 -16777216 true "" "plot ifelse-value (count people <= 0)[0][meanRRParents]"
+"RRSiblings" 1.0 0 -4079321 true "" "plot ifelse-value (count people <= 0)[0][meanRRSiblings]"
 
 @#$#@#$#@
 ## WHAT IS IT?

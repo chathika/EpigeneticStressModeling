@@ -2,18 +2,18 @@ to inherit-schizophrenia [m f]
   ifelse [schizophrenia-inherited] of mother and [schizophrenia-inherited] of father [
   if random-float 1 < 2 * schizophrenia-inherit-threshold [
     set schizophrenia-inherited true
-    print "child got schizo"
+    ;print "child got schizo"
   ]
     ; share social env and 0.5 of genes increase of 6 
   ][
   if [schizophrenia-inherited] of mother or [schizophrenia-inherited] of father [
   if random-float 1 <  schizophrenia-inherit-threshold [
     set schizophrenia-inherited true
-    print "child got schizo"
+    ;print "child got schizo"
   ]
   ]
    set schizophrenia-inherited false 
-   print "child is ok"
+   ;print "child is ok"
   ]
 end
 
@@ -32,4 +32,17 @@ ask people[
   ]
   ]
 ]
+end
+
+to-report meanRRParents
+let Ie count people with [schizophrenia-exhibited and (is-agent? mother) and (is-agent? father) and ([schizophrenia-exhibited] of mother or [schizophrenia-exhibited] of father)]
+let Iu count people with [schizophrenia-exhibited]
+report Ie / (0.00000000001 + Iu)
+end
+
+to-report meanRRSiblings
+let Ie count people with [schizophrenia-exhibited and (is-agent? mother) and (is-agent? father) and (any? other people with [schizophrenia-exhibited and (mother = [mother] of myself or father = [father] of myself)])]
+print Ie
+let Iu count people with [schizophrenia-exhibited]
+report Ie / (0.00000000001 + Iu)
 end

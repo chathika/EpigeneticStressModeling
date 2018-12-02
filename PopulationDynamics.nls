@@ -82,7 +82,7 @@ to-report fertility
     let _year_month_adjustment item 0 filter [record -> ((item 0 record) = year) and ((item 1 record) = month)] birth-rate-adjustment
     let _fertility_adjustment item (ifelse-value (region = "Famine") [2][ifelse-value (region = "NorthControl") [3][4]]) _year_month_adjustment
     set _fertility _fertility * _fertility_adjustment
-    print (word region " Region: fertility adjusted...")
+    ;print (word region " Region: fertility adjusted...")
   ]  
   report _fertility
 end
