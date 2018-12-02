@@ -1,6 +1,8 @@
+globals [inheretence-augmentation?]
+
 to inherit-schizophrenia [m f]
   ifelse [schizophrenia-inherited] of mother and [schizophrenia-inherited] of father [
-  if random-float 1 < 2 * schizophrenia-inherit-threshold [
+  if random-float 1 < 2 * schizophrenia-inherit-threshold * ifelse-value inheretence-augmentation? [inheretence-augmentation-by-shock][0][;epi genetic bla bla 
     set schizophrenia-inherited true
     ;print "child got schizo"
   ]
@@ -34,15 +36,18 @@ ask people[
 ]
 end
 
+to induce-stress-on-people
+  set inheretence-augmentation? true
+end
+
 to-report meanRRParents
 let Ie count people with [schizophrenia-exhibited and (is-agent? mother) and (is-agent? father) and ([schizophrenia-exhibited] of mother or [schizophrenia-exhibited] of father)]
-let Iu count people with [schizophrenia-exhibited]
+let Iu count people with [schizophrenia-exhibited and (is-agent? mother) and (is-agent? father) and ([not schizophrenia-exhibited] of mother and [not schizophrenia-exhibited] of father)]
 report Ie / (0.00000000001 + Iu)
 end
 
 to-report meanRRSiblings
 let Ie count people with [schizophrenia-exhibited and (is-agent? mother) and (is-agent? father) and (any? other people with [schizophrenia-exhibited and (mother = [mother] of myself or father = [father] of myself)])]
-print Ie
-let Iu count people with [schizophrenia-exhibited]
+let Iu count people with [schizophrenia-exhibited and (is-agent? mother) and (is-agent? father) and (any? other people with [not schizophrenia-exhibited and (mother = [mother] of myself and father = [father] of myself)])]
 report Ie / (0.00000000001 + Iu)
 end
