@@ -65,7 +65,7 @@ to go
   ;;;;;
   tick
   update-time-and-age
-  if (year = 2018 or not any? People) [stop]
+  if (year = stop-year or not any? People) [stop]
 end
 
 ;; Observer procedure
@@ -506,6 +506,17 @@ PENS
 "NorthControl" 1.0 0 -13345367 true "" "plot 100 * count people with [region = \"NorthControl\" and schizophrenia-exhibited] / count people"
 "SouthControl" 1.0 0 -14439633 true "" "plot 100 * count people with [region = \"SouthControl\" and schizophrenia-exhibited] / count people"
 "Famine" 1.0 0 -2674135 true "" "plot 100 * count people with [region = \"Famine\" and schizophrenia-exhibited] / count people"
+
+INPUTBOX
+13
+197
+73
+257
+stop-year
+1950.0
+1
+0
+Number
 
 @#$#@#$#@
 ## WHAT IS IT?
