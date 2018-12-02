@@ -1,6 +1,5 @@
 to inherit-schizophrenia [m f]
   ifelse [schizophrenia-inherited] of mother and [schizophrenia-inherited] of father [
-  ;12
   if random-float 1 < 2 * schizophrenia-inherit-threshold [
     set schizophrenia-inherited true
     print "child got schizo"
@@ -8,7 +7,6 @@ to inherit-schizophrenia [m f]
     ; share social env and 0.5 of genes increase of 6 
   ][
   if [schizophrenia-inherited] of mother or [schizophrenia-inherited] of father [
-  ;6
   if random-float 1 <  schizophrenia-inherit-threshold [
     set schizophrenia-inherited true
     print "child got schizo"
@@ -19,18 +17,17 @@ to inherit-schizophrenia [m f]
   ]
 end
 
-to exhibit-schizophrenia-social-effect
- and neighbor 10 = schizo
-ifelse schizophrenia-inherited and random-float 1 < schizophrenia-inherited-exhibit-threshold [
-set schizophrenia-exhibited true
-] [
+to exhibit-schizophrenia
+  if schizophrenia-exhibited = false[
 
-]
-;; number of neighbor with schizo, number relatives
-end
-
-to exhibt-schizophrenia-environmental-effect
-if random-float 1 < schizophrenia-external-exhibit-threshold [
-set schizophrenia-exhibited true
-]
+  ifelse schizophrenia-inherited and count (other turtles in-radius 2) with [schizophrenia-exhibited] > schizophrenia-via-social-effect-threshold  [ ; considers Moore neighborhood
+    if random-float 1 < schizophrenia-exhibit-uninherited-threshold [
+      set schizophrenia-exhibited true
+    ]  
+  ][
+    if random-float 1 < schizophrenia-exhibit-uninherited [
+      set schizophrenia-exhibited true
+    ]
+  ]
+  ]
 end

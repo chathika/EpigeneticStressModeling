@@ -1,0 +1,7 @@
+to inherit-schizophrenia [mother father]
+  ifelse [schizophrenia-inherited] of mother and [schizophrenia-inherited] of father [
+    set schizophrenia-inherited true
+  ][
+   set schizophrenia-inherited false 
+  ]  
+end
