@@ -61,6 +61,7 @@ to go
   ;;;;; Population dynamics
   runPopulationDynamics
   move-around
+  exhibit-schizophrenia
   ;;;;;
   tick
   update-time-and-age
@@ -443,10 +444,10 @@ HORIZONTAL
 SLIDER
 589
 418
-875
+882
 451
-schizophrenia-via-social-effect-threshold
-schizophrenia-via-social-effect-threshold
+schizophrenia-via-social-interaction-threshold
+schizophrenia-via-social-interaction-threshold
 0
 50
 1.0

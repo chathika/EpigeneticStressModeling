@@ -18,9 +18,10 @@ to inherit-schizophrenia [m f]
 end
 
 to exhibit-schizophrenia
+ask people[
   if schizophrenia-exhibited = false[
 
-  ifelse schizophrenia-inherited and count (other turtles in-radius 2) with [schizophrenia-exhibited] > schizophrenia-via-social-effect-threshold  [ ; considers Moore neighborhood
+  ifelse schizophrenia-inherited and count (other turtles in-radius 2) with [schizophrenia-exhibited] > schizophrenia-via-social-interaction-threshold  [ ; considers Moore neighborhood
     if random-float 1 < schizophrenia-exhibit-uninherited-threshold [
       set schizophrenia-exhibited true
     ]  
@@ -30,4 +31,5 @@ to exhibit-schizophrenia
     ]
   ]
   ]
+]
 end
