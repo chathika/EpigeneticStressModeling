@@ -22,11 +22,11 @@ ask people[
   if schizophrenia-exhibited = false[
 
   ifelse schizophrenia-inherited and count (other turtles in-radius 2) with [schizophrenia-exhibited] > schizophrenia-via-social-interaction-threshold  [ ; considers Moore neighborhood
-    if random-float 1 < schizophrenia-exhibit-uninherited-threshold [
+    if random-float 1 < schizophrenia-exhibit-inherited-threshold [
       set schizophrenia-exhibited true
     ]  
   ][
-    if random-float 1 < schizophrenia-exhibit-uninherited [
+    if random-float 1 < schizophrenia-exhibit-uninherited-threshold [
       set schizophrenia-exhibited true
     ]
   ]

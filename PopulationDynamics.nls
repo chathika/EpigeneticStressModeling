@@ -10,6 +10,22 @@ to-report read-fertility-data
       set _annual-fertility lput (list (item 1 annual-record) min-age max-age (item 3 annual-record)) _annual-fertility 
     ][print (substring (item 2 annual-record) 3 5)]
   ]
+  
+  ;; if period is between 1944 to 1946 then use stein and susser data
+  let stein-and-susser-birthrates but-first csv:from-file "data/NetherlandsFertility1940to2017.csv"
+  set birth-rate-adjustment (list)
+  foreach stein-and-susser-birthrates [row ->
+    let _year (item 0 row)
+    let _month (item 1 row)
+    let _famine_births ((item 2 row) + (item 3 row))
+    let _northcontrol_births ((item 5 row) + (item 6 row))
+    let _southcontrol_births ((item 8 row) + (item 9 row))
+    let _total (_famine_births + _northcontrol_births + _southcontrol_births)
+    let _famine_adjustment _famine_births / _total
+    let _northcontrol_adjustment _northcontrol_births / _total
+    let _southcontrol_adjustment _southcontrol_births / _total
+    set birth-rate-adjustment lput (list _year _month _famine_adjustment _northcontrol_adjustment _southcontrol_adjustment) birth-rate-adjustment
+  ]
   report _annual-fertility 
 end
 
@@ -62,6 +78,10 @@ to-report fertility
   carefully [
     set _fertility item 3 (item 0 (filter [record -> ((item 0 record) = year) and ((item 1 record) < age) and ((item 2 record) < age)] annual-fertility))
   ][]
+  if year >= 1944 and year <= 1945 [
+    let _year_month_adjustment filter [record -> ((item 0 record) = year) and ((item 1 record) = month)] birth-rate-adjustment
+    ;if [region]
+  ]  
   report _fertility
 end
 

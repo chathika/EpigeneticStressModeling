@@ -24,6 +24,7 @@ globals [;FirstDegreeRR SecondDegreeRR
   number-of-births
   annual-fertility
   annual-mortality
+  birth-rate-adjustment
   ;total-schizophrenia-inherited RR-stress-multiplier
 ]
 to setup
