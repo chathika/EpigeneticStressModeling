@@ -84,8 +84,9 @@ end
 to move-around
   ;;;;; Random walk
   ask people [
-    move-to one-of patches with [region = [birth-region] of myself]
-    ;set heading random 360
+    ;move-to one-of patches with [region = [birth-region] of myself]
+    set heading random 360
+    if [region] of patch-ahead 1 = birth-region [fd 1]
     ;let current-region [region] of patch-here
     ;while [[region] of patch-ahead 1 = current-region][fd 1]
   ]
@@ -450,7 +451,7 @@ schizophrenia-via-social-interaction-threshold
 schizophrenia-via-social-interaction-threshold
 0
 50
-1.0
+0.0
 1
 1
 NIL
