@@ -25,6 +25,7 @@ globals [;FirstDegreeRR SecondDegreeRR
   annual-fertility
   annual-mortality
   birth-rate-adjustment
+  stress-on?
   ;total-schizophrenia-inherited RR-stress-multiplier
 ]
 to setup
@@ -42,7 +43,7 @@ to setup
   ;set p2 33.93622589111328
   ;set p3 -27.331884384155273
   ask turtles [set siblings (list)]
-
+  set stress-on? false
   reset-ticks
 
 end
@@ -64,6 +65,17 @@ to go
   runPopulationDynamics
   move-around
   exhibit-schizophrenia
+  ifelse use-stress? and ((year = stress-start-year and month >= stress-start-month) or (year > stress-start-year)) and ((year < stress-end-year) or (year = stress-end-year and month <= stress-end-month)) [
+    set stress-on? true
+  ][
+    set stress-on? false
+  ]
+  ifelse stress-on? [
+    set inheretence-augmentation? true
+  ][
+    set inheretence-augmentation? false
+  ]
+  print inheretence-augmentation?
   ;;;;;
   tick
   update-time-and-age
@@ -227,8 +239,8 @@ GRAPHICS-WINDOW
 100
 -150
 150
-0
-0
+1
+1
 1
 ticks
 30.0
@@ -628,6 +640,17 @@ inheretence-augmentation-by-shock
 1
 NIL
 HORIZONTAL
+
+SWITCH
+136
+758
+255
+791
+use-stress?
+use-stress?
+0
+1
+-1000
 
 @#$#@#$#@
 ## WHAT IS IT?

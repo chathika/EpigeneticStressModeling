@@ -36,10 +36,6 @@ ask people[
 ]
 end
 
-to induce-stress-on-people
-  set inheretence-augmentation? true
-end
-
 to-report meanRRParents
 let Ie count people with [schizophrenia-exhibited and (is-agent? mother) and (is-agent? father) and ([schizophrenia-exhibited] of mother or [schizophrenia-exhibited] of father)]
 let Iu count people with [schizophrenia-exhibited and (is-agent? mother) and (is-agent? father) and ([not schizophrenia-exhibited] of mother and [not schizophrenia-exhibited] of father)]
