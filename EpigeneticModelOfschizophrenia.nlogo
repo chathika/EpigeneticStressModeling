@@ -4,7 +4,8 @@ __includes ["PopulationDynamics.nls"]
 people-own[
   ;schizophrenic-risk ; boolean
   ;risk-age
-  ;schizophrenia ; boolean
+  schizophrenia-inherited ; boolean
+  schizophrenia-exhibited
   age ;; integer
   ;stressed
   ;;
@@ -14,6 +15,7 @@ people-own[
   children
   sex
   births-this-tick
+  birth-region
 ]
 patches-own [region]
 globals [;FirstDegreeRR SecondDegreeRR
@@ -29,12 +31,13 @@ to setup
   ;set FirstDegreeRR csv:from-file "data/FirstDegreeRR.csv"
   ;set SecondDegreeRR csv:from-file "data/SecondDegreeRR.csv"
   ;set RR-stress-multiplier 1
+  createRegions
   init-population
   ;set p1 0.03918391838669777
   ;set p2 33.93622589111328
   ;set p3 -27.331884384155273
   ask turtles [set siblings (list)]
-  createRegions
+
   reset-ticks
   set year 1940
   set month 1
@@ -43,13 +46,18 @@ to setup
 end
 
 to createRegions
-  ask patches with [pycor < (world-height / 3 - world-height / 2)] [set region "SouthControl" set pcolor yellow - 0.3]
-  ask patches with [pycor > (world-height / 3 - world-height / 2) and pycor < (2 * world-height / 3 - world-height / 2)] [set region "Famine" set pcolor blue - 0.3]
-  ask patches with [pycor > (2 * world-height / 3 - world-height / 2)] [set region "NorthControl" set pcolor yellow - 0.3]
+  let border1 (world-height / 3 - world-height / 2)
+  let border2 (2 * world-height / 3 - world-height / 2)
+  let _border_size 4
+  ask patches with [pycor > border1 - 2] [set region "SouthControl" set pcolor grey + 4 ]
+  ask patches with [pycor > border1 + 2 and pycor < border2 - 2] [set region "Famine" set pcolor grey + 4]
+  ask patches with [pycor < border1 + 2] [set region "NorthControl" set pcolor grey + 4]
+  ask patches with [pycor < _border_size + border1 and pycor > border1 - _border_size] [set pcolor black set region "Border"]
+  ask patches with [pycor < _border_size + border2 and pycor > border2 - _border_size] [set pcolor black set region "Border"]
 end
 
+;; Observer procedure
 to go
-
   ;;;;; Population dynamics
   runPopulationDynamics
   move-around
@@ -75,7 +83,7 @@ end
 to move-around
   ;;;;; Random walk
   ask people [
-    move-to one-of patches with [region = [[region] of patch-here] of myself]
+    move-to one-of patches with [region = [birth-region] of myself]
     ;set heading random 360
     ;let current-region [region] of patch-here
     ;while [[region] of patch-ahead 1 = current-region][fd 1]
@@ -84,15 +92,32 @@ end
 to-report init-new-person [m f]
   set xcor random world-width
   set ycor random world-height
-  set shape "person"
-  set color green
+  ;set shape "face happy"
+  set mother m
+  set father f
+  let _child_region [region] of one-of patches with [region != "Border"]
+  if mother != nobody and father != nobody [
+    let _mothers_patch [region] of (patch-at [xcor] of mother [ycor] of mother)
+    let _fathers_patch [region] of (patch-at [xcor] of mother [ycor] of father)
+    if _mothers_patch != _fathers_patch [
+     ;error "Mother and Father cannot be from two different regions!"
+    ]
+    set _child_region _mothers_patch
+  ]
+  set birth-region _child_region
+  move-to one-of patches with [region = _child_region ]
+  ;set color ifelse-value ([region] of patch-here = "SouthControl") [red] [ifelse-value ([region] of patch-here = "NorthControl") [green][blue]]
   ;set stressed false
   ;set schizophrenic-risk false
   ;set schizophrenia false
   set children (list)
   set sex ifelse-value (random-float 1 < 0.5) ["female"]["male"]
-  set mother m
-  set mother f
+  if mother = nobody or father = nobody [
+    set schizophrenia-inherited ifelse-value (random-float 1 < (init-percent-schizophrenia-inherited / 100)) [true][false]
+    set schizophrenia-exhibited ifelse-value (schizophrenia-inherited and (random-float 1 < (init-percent-schizophrenia-exhibited / 100))) [true][false]
+  ]
+  set color ifelse-value (schizophrenia-exhibited) [red][ifelse-value(schizophrenia-inherited)[yellow][green]]
+  set shape ifelse-value (schizophrenia-exhibited) ["face sad"][ifelse-value(schizophrenia-inherited)["face neutral"]["face happy"]]
   ;inherit-schizophrenic-risk
   set size 5
   report who
@@ -160,7 +185,9 @@ to init-population
     create-people group-size[
       let id init-new-person nobody nobody
       ask person id [set age  item 0 age-group + (random (item 1 age-group - item 0 age-group))]
+
     ]
+
   ]
 end
 @#$#@#$#@
@@ -340,7 +367,7 @@ scale
 scale
 0
 10000
-1000.0
+5000.0
 1
 1
 th
@@ -367,6 +394,36 @@ month
 17
 1
 11
+
+SLIDER
+386
+671
+648
+704
+init-percent-schizophrenia-inherited
+init-percent-schizophrenia-inherited
+0
+100
+20.0
+1
+1
+%
+HORIZONTAL
+
+SLIDER
+398
+722
+646
+755
+init-percent-schizophrenia-exhibited
+init-percent-schizophrenia-exhibited
+0
+100
+20.0
+1
+1
+NIL
+HORIZONTAL
 
 @#$#@#$#@
 ## WHAT IS IT?

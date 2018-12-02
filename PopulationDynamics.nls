@@ -1,0 +1,74 @@
+__includes ["Inheritance.nls"]
+; Observer procedure
+to-report read-fertility-data
+  let fertility-rates but-first csv:from-file "data/NetherlandsFertility1940to2017.csv"
+  let _annual-fertility (list)
+  foreach fertility-rates [ annual-record ->
+    carefully [
+      let min-age read-from-string (substring (item 2 annual-record) 0 2)
+      let max-age ifelse-value ((length (item 2 annual-record)) > 3) [read-from-string (substring (item 2 annual-record) 3 5)][100]
+      set _annual-fertility lput (list (item 1 annual-record) min-age max-age (item 3 annual-record)) _annual-fertility 
+    ][print (substring (item 2 annual-record) 3 5)]
+  ]
+  report _annual-fertility 
+end
+
+; Observer procedure
+to-report read-mortality-data
+  let mortality-rates but-first csv:from-file "data/NetherlandsDeathsByAge_1000.csv"
+  let _annual-mortality (list)
+  foreach mortality-rates [ annual-record ->
+    carefully [
+      let min-age read-from-string (substring (item 2 annual-record) 0 2)
+      let max-age ifelse-value ((length (item 2 annual-record)) > 3) [read-from-string (substring (item 2 annual-record) 3 5)][100]
+      set _annual-mortality lput (list (item 1 annual-record) min-age max-age (item 3 annual-record)) _annual-mortality 
+    ][print (substring (item 2 annual-record) 3 5)]
+  ]
+  report _annual-mortality 
+end
+;; Observer procedure
+to runPopulationDynamics
+  set number-of-births 0
+  ask people [set births-this-tick 0]
+  ask people with [sex = "female"][ if (random-float 1 < fertility / (1000 * 12))  [ make-kids ] ]; model resolution is in months
+  ask people [ if random-float 1 < (mortality / (1000 * 12)) [ die]]
+end
+;; Make children, and determine their methylation state
+to make-kids
+  let child-id 0
+  let myregion [region] of patch-here
+  let selected-father min-one-of (people with [sex = "male" and ([region] of (patch-at ([xcor] of self) ([ycor] of self) ) = myregion)] ) [distance myself]
+  ;; consider family no incest
+  hatch-people 1 [
+    set child-id init-new-person myself selected-father
+    set number-of-births number-of-births + 1
+    inherit-schizophrenia myself father
+  ]
+  set children lput (person child-id) children
+  set births-this-tick births-this-tick + 1
+end
+
+; People reporter
+to-report fertility
+  ;ifelse schizophrenia [
+  ;  report 0.39 ; (Bundy, H., Stahl, D., & MacCabe, J. H. (2011). A systematic review and meta‐analysis of the fertility of patients with schizophrenia and their unaffected relatives. Acta Psychiatrica Scandinavica, 123(2), 98-106.)
+  ;][
+  ;  let sigma ifelse-value (age < modal-fertility-age) [sigma-before][sigma-after]
+   ; report base-level-fertility * exp (-1 * ((age - modal-fertility-age) / sigma) ^ 2)
+  ;]
+  
+  ;age
+  let _fertility 0
+  carefully [
+    set _fertility item 3 (item 0 (filter [record -> ((item 0 record) = year) and ((item 1 record) < age) and ((item 2 record) < age)] annual-fertility))
+  ][]
+  report _fertility
+end
+
+to-report mortality
+  let _mortality 0
+  carefully [
+    set _mortality item 3 (item 0 (filter [record -> ((item 0 record) = year) and ((item 1 record) < age) and ((item 2 record) < age)] annual-mortality))
+  ][]
+  report _mortality
+end
