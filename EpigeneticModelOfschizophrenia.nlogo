@@ -497,14 +497,14 @@ Count
 0.0
 10.0
 0.0
-10.0
+5.0
 true
 true
 "" ""
 PENS
-"NorthControl" 1.0 0 -13345367 true "" "plot count people with [region = \"NorthControl\" and schizophrenia-exhibited]"
-"SouthControl" 1.0 0 -14439633 true "" "plot count people with [region = \"SouthControl\" and schizophrenia-exhibited]"
-"Famine" 1.0 0 -2674135 true "" "plot count people with [region = \"Famine\" and schizophrenia-exhibited]"
+"NorthControl" 1.0 0 -13345367 true "" "plot 100 * count people with [region = \"NorthControl\" and schizophrenia-exhibited] / count people"
+"SouthControl" 1.0 0 -14439633 true "" "plot 100 * count people with [region = \"SouthControl\" and schizophrenia-exhibited] / count people"
+"Famine" 1.0 0 -2674135 true "" "plot 100 * count people with [region = \"Famine\" and schizophrenia-exhibited] / count people"
 
 @#$#@#$#@
 ## WHAT IS IT?
