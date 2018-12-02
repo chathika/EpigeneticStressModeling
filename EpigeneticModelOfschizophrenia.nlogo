@@ -340,10 +340,10 @@ PENS
 "default" 1.0 2 -16777216 true "" "plot sum [births-this-tick] of people"
 
 PLOT
-972
-471
-1172
-621
+1204
+19
+1404
+169
 Age Distribution
 NIL
 NIL
@@ -485,6 +485,26 @@ schizophrenia-exhibit-uninherited
 1
 NIL
 HORIZONTAL
+
+PLOT
+905
+373
+1419
+592
+Schizophrenia Exhibited by Region
+Time
+Count
+0.0
+10.0
+0.0
+10.0
+true
+true
+"" ""
+PENS
+"NorthControl" 1.0 0 -13345367 true "" "plot count people with [region = \"NorthControl\" and schizophrenia-exhibited]"
+"SouthControl" 1.0 0 -14439633 true "" "plot count people with [region = \"SouthControl\" and schizophrenia-exhibited]"
+"Famine" 1.0 0 -2674135 true "" "plot count people with [region = \"Famine\" and schizophrenia-exhibited]"
 
 @#$#@#$#@
 ## WHAT IS IT?
