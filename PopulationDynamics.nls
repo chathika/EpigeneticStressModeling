@@ -12,7 +12,7 @@ to-report read-fertility-data
   ]
   
   ;; if period is between 1944 to 1946 then use stein and susser data
-  let stein-and-susser-birthrates but-first csv:from-file "data/NetherlandsFertility1940to2017.csv"
+  let stein-and-susser-birthrates but-first csv:from-file "data/SteinAndSusser1975Table3.csv"
   set birth-rate-adjustment (list)
   foreach stein-and-susser-birthrates [row ->
     let _year (item 0 row)
@@ -79,8 +79,10 @@ to-report fertility
     set _fertility item 3 (item 0 (filter [record -> ((item 0 record) = year) and ((item 1 record) < age) and ((item 2 record) < age)] annual-fertility))
   ][]
   if year >= 1944 and year <= 1945 [
-    let _year_month_adjustment filter [record -> ((item 0 record) = year) and ((item 1 record) = month)] birth-rate-adjustment
-    ;if [region]
+    let _year_month_adjustment item 0 filter [record -> ((item 0 record) = year) and ((item 1 record) = month)] birth-rate-adjustment
+    let _fertility_adjustment item (ifelse-value (region = "Famine") [2][ifelse-value (region = "NorthControl") [3][4]]) _year_month_adjustment
+    set _fertility _fertility * _fertility_adjustment
+    print (word region " Region: fertility adjusted...")
   ]  
   report _fertility
 end
