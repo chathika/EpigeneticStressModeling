@@ -398,10 +398,10 @@ month
 11
 
 SLIDER
-386
-671
-648
-704
+610
+305
+872
+338
 init-percent-schizophrenia-inherited
 init-percent-schizophrenia-inherited
 0
@@ -413,10 +413,10 @@ init-percent-schizophrenia-inherited
 HORIZONTAL
 
 SLIDER
-386
-706
-648
-739
+610
+340
+872
+373
 init-percent-schizophrenia-exhibited
 init-percent-schizophrenia-exhibited
 0
@@ -428,25 +428,25 @@ NIL
 HORIZONTAL
 
 SLIDER
-666
-380
-886
-413
+591
+531
+878
+564
 schizophrenia-inherit-threshold
 schizophrenia-inherit-threshold
 0
-100
-50.0
 1
+0.001
+0.0001
 1
 NIL
 HORIZONTAL
 
 SLIDER
 589
-418
-882
-451
+567
+877
+600
 schizophrenia-via-social-interaction-threshold
 schizophrenia-via-social-interaction-threshold
 0
@@ -459,9 +459,9 @@ HORIZONTAL
 
 SLIDER
 589
-463
+612
 878
-496
+645
 schizophrenia-exhibit-uninherited-threshold
 schizophrenia-exhibit-uninherited-threshold
 0
@@ -474,9 +474,9 @@ HORIZONTAL
 
 SLIDER
 592
-502
+651
 877
-535
+684
 schizophrenia-exhibit-uninherited
 schizophrenia-exhibit-uninherited
 0
@@ -517,6 +517,26 @@ stop-year
 1
 0
 Number
+
+TEXTBOX
+697
+285
+847
+303
+Initial Conditions
+14
+0.0
+1
+
+TEXTBOX
+679
+501
+829
+519
+Model Parameters
+14
+0.0
+1
 
 @#$#@#$#@
 ## WHAT IS IT?
