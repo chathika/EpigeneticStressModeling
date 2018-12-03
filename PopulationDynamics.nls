@@ -46,22 +46,38 @@ end
 to runPopulationDynamics
   set number-of-births 0
   ask people [set births-this-tick 0]
-  ask people with [sex = "female"][ if (random-float 1 < fertility / (1000 * 12))  [ make-kids ] ]; model resolution is in months
+  ask people with [sex = "female"][ if (conceived = -1) and (random-float 1 < fertility / (1000 * 12))  [ make-kids ] ]; model resolution is in months
+  ask people with [sex = "female"][updatePregnancy]
   ask people [ if random-float 1 < (mortality / (1000 * 12)) [ die]]
 end
 ;; Make children, and determine their methylation state
 to make-kids
-  let child-id 0
-  let myregion [region] of patch-here
-  let selected-father min-one-of (people with [sex = "male" and ([region] of (patch-at ([xcor] of self) ([ycor] of self) ) = myregion)] ) [distance myself]
+  let myregion birth-region
+  let selected-father min-one-of (people with [sex = "male" and birth-region = myregion] ) [distance myself]
+  set selected-father-info (list [birth-region] of selected-father [schizophrenia-inherited] of selected-father [who] of selected-father)
+  set conceived 0
   ;; consider family no incest
-  hatch-people 1 [
-    set child-id init-new-person myself selected-father
-    set number-of-births number-of-births + 1
-    inherit-schizophrenia myself father
+end
+
+;;updated pregenancy duration and give birth
+to updatePregnancy 
+  if conceived > -1 [
+    set conceived conceived + 1
+    set my-child-inherits-schizophrenia inherit-schizophrenia self selected-father-info
+    if conceived >= 9 [
+      let child-id 0
+      hatch-people 1 [
+        set child-id init-new-person myself selected-father-info
+        set number-of-births number-of-births + 1        
+        if [my-child-inherits-schizophrenia] of myself [
+         set schizophrenia-inherited true
+        ]
+      ]
+      set children lput (person child-id) children
+      set births-this-tick births-this-tick + 1
+      set conceived -1
+    ]
   ]
-  set children lput (person child-id) children
-  set births-this-tick births-this-tick + 1
 end
 
 ; People reporter
@@ -80,9 +96,9 @@ to-report fertility
   ][]
   if year >= 1944 and year <= 1945 [
     let _year_month_adjustment item 0 filter [record -> ((item 0 record) = year) and ((item 1 record) = month)] birth-rate-adjustment
-    let _fertility_adjustment item (ifelse-value (region = "Famine") [2][ifelse-value (region = "NorthControl") [3][4]]) _year_month_adjustment
-    set _fertility _fertility * _fertility_adjustment
-    ;print (word region " Region: fertility adjusted...")
+    let _fertility_adjustment item (ifelse-value (birth-region = "Famine") [2][ifelse-value (birth-region = "NorthControl") [3][4]]) _year_month_adjustment
+    set _fertility 3 * _fertility * _fertility_adjustment
+    ;print (word birth-region " Region: fertility adjusted...")
   ]  
   report _fertility
 end

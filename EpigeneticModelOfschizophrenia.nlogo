@@ -9,13 +9,16 @@ people-own[
   age ;; integer
   ;stressed
   ;;
-  father
   mother
+  father ;; list
   siblings
   children
   sex
   births-this-tick
   birth-region
+  conceived
+  selected-father-info
+  my-child-inherits-schizophrenia
 ]
 patches-own [region]
 globals [;FirstDegreeRR SecondDegreeRR
@@ -44,6 +47,7 @@ to setup
   ;set p3 -27.331884384155273
   ask turtles [set siblings (list)]
   set stress-on? false
+  set inheretence-augmentation? false
   reset-ticks
 
 end
@@ -75,10 +79,10 @@ to go
   ][
     set inheretence-augmentation? false
   ]
-  print inheretence-augmentation?
+
+  update-time-and-age
   ;;;;;
   tick
-  update-time-and-age
   if (year = stop-year or not any? People) [stop]
 end
 
@@ -110,17 +114,17 @@ to-report init-new-person [m f]
   set ycor random world-height
   ;set shape "face happy"
   set mother m
-  set father f
+  set father f ;; list (region schizoinherited)
   let _child_region [region] of one-of patches with [region != "Border"]
-  if mother != nobody and father != nobody [
-    let _mothers_patch [region] of (patch-at [xcor] of mother [ycor] of mother)
-    let _fathers_patch [region] of (patch-at [xcor] of mother [ycor] of father)
-    if _mothers_patch != _fathers_patch [
-     ;error "Mother and Father cannot be from two different regions!"
+  if mother != nobody and empty? father  [
+    if ([birth-region] of mother != first father) [
+    print ( word [birth-region] of mother " "  first father)
+     error "Mother and Father cannot be from two different regions!"
     ]
-    set _child_region _mothers_patch
+    set _child_region [birth-region] of mother
   ]
   set birth-region _child_region
+  set conceived -1
   move-to one-of patches with [region = _child_region ]
   ;set color ifelse-value ([region] of patch-here = "SouthControl") [red] [ifelse-value ([region] of patch-here = "NorthControl") [green][blue]]
   ;set stressed false
@@ -128,12 +132,15 @@ to-report init-new-person [m f]
   ;set schizophrenia false
   set children (list)
   set sex ifelse-value (random-float 1 < 0.5) ["female"]["male"]
-  if mother = nobody or father = nobody [
-    set schizophrenia-inherited ifelse-value (random-float 1 < (init-percent-schizophrenia-inherited / 100)) [true][false]
-    set schizophrenia-exhibited ifelse-value (schizophrenia-inherited and (random-float 1 < (init-percent-schizophrenia-exhibited / 100))) [true][false]
+  if mother = nobody or empty? father [
+    ;set schizophrenia-inherited ifelse-value (random-float 1 < (init-percent-schizophrenia-inherited / 100)) [true][false]
+    ;set schizophrenia-exhibited ifelse-value (schizophrenia-inherited and (random-float 1 < (init-percent-schizophrenia-exhibited / 100))) [true][false]
   ]
-  set color ifelse-value (schizophrenia-exhibited) [red][ifelse-value(schizophrenia-inherited)[yellow][green]]
-  set shape ifelse-value (schizophrenia-exhibited) ["face sad"][ifelse-value(schizophrenia-inherited)["face neutral"]["face happy"]]
+  set schizophrenia-inherited false
+  set schizophrenia-exhibited false
+  set my-child-inherits-schizophrenia false
+  carefully [set color ifelse-value (schizophrenia-exhibited) [red][ifelse-value(schizophrenia-inherited)[yellow][green]]][]
+  carefully [set shape ifelse-value (schizophrenia-exhibited) ["face sad"][ifelse-value(schizophrenia-inherited)["face neutral"]["face happy"]]][]
   ;inherit-schizophrenic-risk
   set size 5
   report who
@@ -206,16 +213,37 @@ to init-population
 
   ]
   ;; assign parents assuming
-  ask people with [mother = nobody or father = nobody][
+  ask people with [mother = nobody or empty? father ][
      let _potential-mothers other people with [sex = "female" and age > 16 + [age] of myself]
      set mother one-of _potential-mothers ;with [(random-float 1 < fertility / (1000 * 12))]
-     let _potential-fathers other people with [sex = "male" and age > 16 + [age] of myself]
-     set father one-of _potential-mothers ;with [(random-float 1 < fertility / (1000 * 12))]
-
-   let id init-new-person mother father
+     ifelse mother != nobody [
+     let _mothers_region [birth-region] of mother
+     let _potential-fathers other people with [sex = "male" and age > 16 + [age] of myself and birth-region = _mothers_region]
+      ifelse not any? _potential-fathers [
+        set father getRandomInitFatherInfo
+      ][
+        let father-agent one-of _potential-fathers ;with [(random-float 1 < fertility / (1000 * 12))]
+        set father (list [birth-region] of father-agent [schizophrenia-inherited] of father-agent [who] of father-agent)
+      ]
+     ][
+      set father getRandomInitFatherInfo
+     ]
+    let id init-new-person mother father
   ]
+  ask people with [sex = "female"] [
+    if random-float 1 < fertility / (1000 * 12) [
+      set conceived random 9
+      set selected-father-info getRandomInitFatherInfo
+    ]
 
+    set my-child-inherits-schizophrenia ifelse-value (random-float 1 < init-percent-schizophrenia-inherited / 100) [true][false]
+  ]
+  ask people [set schizophrenia-inherited ifelse-value (random-float 1 < init-percent-schizophrenia-inherited / 100) [true][false]]
 
+end
+
+to-report getRandomInitFatherInfo
+   report (list one-of (list "NorthControl" "SouthControl" "Famine") (random-float 1 < init-percent-schizophrenia-inherited / 100) -1)
 end
 @#$#@#$#@
 GRAPHICS-WINDOW
@@ -279,36 +307,6 @@ NIL
 NIL
 1
 
-SLIDER
-158
-871
-368
-904
-relative-risk-of-manifestation
-relative-risk-of-manifestation
-0
-100
-2.0
-1
-1
-NIL
-HORIZONTAL
-
-SLIDER
-153
-836
-380
-869
-base-schizophrenia-inheritability
-base-schizophrenia-inheritability
-0
-100
-0.006
-1
-1
-NIL
-HORIZONTAL
-
 PLOT
 605
 14
@@ -348,11 +346,11 @@ PENS
 "default" 1.0 2 -16777216 true "" "plot count turtles"
 
 PLOT
-987
-190
-1187
-340
-Births
+1413
+13
+1891
+163
+Births per Month
 NIL
 NIL
 0.0
@@ -360,10 +358,12 @@ NIL
 0.0
 10.0
 true
-false
+true
 "" ""
 PENS
-"default" 1.0 2 -16777216 true "" "plot sum [births-this-tick] of people"
+"NorthControl" 1.0 0 -14070903 true "" "plot sum [births-this-tick] of people with [region = \"NorthControl\"]"
+"SouthControl" 1.0 0 -14439633 true "" "plot sum [births-this-tick] of people with [region = \"SouthControl\"]"
+"Famine" 1.0 0 -2674135 true "" "plot sum [births-this-tick] of people with [region = \"Famine\"]"
 
 PLOT
 1204
@@ -431,7 +431,7 @@ init-percent-schizophrenia-inherited
 init-percent-schizophrenia-inherited
 0
 100
-1.0
+9.0
 1
 1
 %
@@ -446,7 +446,7 @@ init-percent-schizophrenia-exhibited
 init-percent-schizophrenia-exhibited
 0
 100
-20.0
+50.0
 1
 1
 NIL
@@ -461,7 +461,7 @@ schizophrenia-inherit-threshold
 schizophrenia-inherit-threshold
 0
 1
-0.001
+1.0E-4
 0.0001
 1
 NIL
@@ -491,7 +491,7 @@ schizophrenia-exhibit-inherited-threshold
 schizophrenia-exhibit-inherited-threshold
 0
 1
-1.0E-4
+1.0
 0.001
 1
 NIL
@@ -506,20 +506,20 @@ schizophrenia-exhibit-uninherited-threshold
 schizophrenia-exhibit-uninherited-threshold
 0
 1
-1.0E-4
+0.0
 0.001
 1
 NIL
 HORIZONTAL
 
 PLOT
-905
-373
-1419
-592
+961
+218
+1475
+437
 Schizophrenia Exhibited by Region
 Time
-Count
+Percent (%)
 0.0
 10.0
 0.0
@@ -528,9 +528,9 @@ true
 true
 "" ""
 PENS
-"NorthControl" 1.0 0 -13345367 true "" "plot 100 * count people with [region = \"NorthControl\" and schizophrenia-exhibited] / count people"
-"SouthControl" 1.0 0 -14439633 true "" "plot 100 * count people with [region = \"SouthControl\" and schizophrenia-exhibited] / count people"
-"Famine" 1.0 0 -2674135 true "" "plot 100 * count people with [region = \"Famine\" and schizophrenia-exhibited] / count people"
+"NorthControl" 1.0 0 -13345367 true "" "plot 100 * count people with [region = \"NorthControl\" and schizophrenia-exhibited] / count people with [region = \"NorthControl\"]"
+"SouthControl" 1.0 0 -14439633 true "" "plot 100 * count people with [region = \"SouthControl\" and schizophrenia-exhibited] / count people with [region = \"SouthControl\"]"
+"Famine" 1.0 0 -2674135 true "" "plot 100 * count people with [region = \"Famine\" and schizophrenia-exhibited] / count people with [region = \"Famine\"]"
 
 INPUTBOX
 13
@@ -538,7 +538,7 @@ INPUTBOX
 73
 257
 stop-year
-1970.0
+2018.0
 1
 0
 Number
@@ -564,23 +564,24 @@ Model Parameters
 1
 
 PLOT
-904
-600
-1419
-750
-RR
+960
+445
+1475
+595
+RR Parents
 Time
 RR
 0.0
 10.0
 0.0
-10.0
+2.0
 true
 true
 "" ""
 PENS
-"RRParents" 1.0 0 -16777216 true "" "plot ifelse-value (count people <= 0)[0][meanRRParents]"
-"RRSiblings" 1.0 0 -4079321 true "" "plot ifelse-value (count people <= 0)[0][meanRRSiblings]"
+"NorthControl" 1.0 0 -14070903 true "" "plot ifelse-value (count people <= 0)[0][meanRRParents \"NorthControl\"]"
+"SouthControl" 1.0 0 -14439633 true "" "plot ifelse-value (count people <= 0)[0][meanRRParents \"SouthControl\"]"
+"Famine" 1.0 0 -2674135 true "" "plot ifelse-value (count people <= 0)[0][meanRRParents \"Famine\"]"
 
 INPUTBOX
 93
@@ -588,7 +589,7 @@ INPUTBOX
 189
 730
 stress-start-year
-1945.0
+1940.0
 1
 0
 Number
@@ -599,7 +600,7 @@ INPUTBOX
 344
 730
 stress-start-month
-10.0
+1.0
 1
 0
 Number
@@ -610,7 +611,7 @@ INPUTBOX
 393
 730
 stress-end-year
-1945.0
+1965.0
 1
 0
 Number
@@ -629,13 +630,13 @@ Number
 SLIDER
 584
 684
-878
+889
 717
 inheretence-augmentation-by-shock
 inheretence-augmentation-by-shock
 0
-100
-50.0
+10000000000
+0.0
 1
 1
 NIL
@@ -651,6 +652,46 @@ use-stress?
 0
 1
 -1000
+
+PLOT
+960
+594
+1475
+744
+RR Siblings
+Time
+RR
+0.0
+10.0
+0.0
+10.0
+true
+true
+"" ""
+PENS
+"NorthControl" 1.0 0 -14070903 true "" "plot ifelse-value (count people <= 0)[0][meanRRSiblings \"NorthControl\"]"
+"SouthControl" 1.0 0 -14439633 true "" "plot ifelse-value (count people <= 0)[0][meanRRSiblings \"SouthControl\"]"
+"Famine" 1.0 0 -2674135 true "" "plot ifelse-value (count people <= 0)[0][meanRRSiblings \"Famine\"]"
+
+PLOT
+1473
+218
+1950
+436
+Schizophrenia Inherited by Region
+Time (months from Jan, 1940)
+Percent (%)
+0.0
+10.0
+0.0
+5.0
+true
+true
+"" ""
+PENS
+"NorthControl" 1.0 0 -14070903 true "" "plot  count people with [birth-region = \"NorthControl\" and schizophrenia-inherited] ;/ count people with [region = \"NorthControl\"]"
+"SouthControl" 1.0 0 -14439633 true "" "plot count people with [birth-region = \"SouthControl\" and schizophrenia-inherited] ;/ count people with [region = \"SouthControl\"]"
+"Famine" 1.0 0 -2674135 true "" "plot count people with [birth-region = \"Famine\" and schizophrenia-inherited]; / count people with [region = \"Famine\"]"
 
 @#$#@#$#@
 ## WHAT IS IT?

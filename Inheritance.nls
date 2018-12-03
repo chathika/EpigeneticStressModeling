@@ -1,30 +1,39 @@
 globals [inheretence-augmentation?]
 
-to inherit-schizophrenia [m f]
-  ifelse [schizophrenia-inherited] of mother and [schizophrenia-inherited] of father [
-  if random-float 1 < 2 * schizophrenia-inherit-threshold * ifelse-value inheretence-augmentation? [inheretence-augmentation-by-shock][0][;epi genetic bla bla 
-    set schizophrenia-inherited true
-    ;print "child got schizo"
+to-report inherit-schizophrenia [m f]
+  let _child-inherits-schizophrenia [my-child-inherits-schizophrenia] of m
+  if not [my-child-inherits-schizophrenia] of m [
+    let _p_inheritance schizophrenia-inherit-threshold * ifelse-value (([birth-region] of m = "Famine") and (first f = "Famine") and inheretence-augmentation?) [inheretence-augmentation-by-shock][1]
+    
+    ifelse [schizophrenia-inherited] of m and item 1 f [ 
+      if random-float 1 < 2 * _p_inheritance[;epi genetic bla bla 
+        if inheretence-augmentation? [print (word [birth-region] of m " inherited " _p_inheritance)]
+        set _child-inherits-schizophrenia true
+        ;print "child got schizo"
+      ]
+      ; share social env and 0.5 of genes increase of 6 
+    ][
+      ifelse [schizophrenia-inherited] of m or item 1 f [
+        if random-float 1 <  _p_inheritance[
+          if inheretence-augmentation? [print (word [birth-region] of m " inherited " _p_inheritance)]
+          set _child-inherits-schizophrenia true
+          ;print "child got schizo"
+        ]
+      ][
+        set _child-inherits-schizophrenia false 
+      ]
+      ;print "child is ok"
+    ]
   ]
-    ; share social env and 0.5 of genes increase of 6 
-  ][
-  if [schizophrenia-inherited] of mother or [schizophrenia-inherited] of father [
-  if random-float 1 <  schizophrenia-inherit-threshold [
-    set schizophrenia-inherited true
-    ;print "child got schizo"
-  ]
-  ]
-   set schizophrenia-inherited false 
-   ;print "child is ok"
-  ]
+  report _child-inherits-schizophrenia
 end
 
 to exhibit-schizophrenia
 ask people[
   if schizophrenia-exhibited = false[
 
-  ifelse schizophrenia-inherited and count (other turtles in-radius 2) with [schizophrenia-exhibited] > schizophrenia-via-social-interaction-threshold  [ ; considers Moore neighborhood
-    if random-float 1 < schizophrenia-exhibit-inherited-threshold [
+  ifelse schizophrenia-inherited and count (other turtles in-radius 2) with [schizophrenia-exhibited] >= schizophrenia-via-social-interaction-threshold  [ ; considers Moore neighborhood
+    if random-float 1 < schizophrenia-exhibit-inherited-threshold * ifelse-value ((birth-region = "Famine") and inheretence-augmentation?) [inheretence-augmentation-by-shock][1][
       set schizophrenia-exhibited true
     ]  
   ][
@@ -36,14 +45,14 @@ ask people[
 ]
 end
 
-to-report meanRRParents
-let Ie count people with [schizophrenia-exhibited and (is-agent? mother) and (is-agent? father) and ([schizophrenia-exhibited] of mother or [schizophrenia-exhibited] of father)]
-let Iu count people with [schizophrenia-exhibited and (is-agent? mother) and (is-agent? father) and ([not schizophrenia-exhibited] of mother and [not schizophrenia-exhibited] of father)]
+to-report meanRRParents [_region]
+let Ie count people with [birth-region = _region and schizophrenia-exhibited and (is-agent? mother) and (not empty? father) and ([schizophrenia-exhibited] of mother or item 1 father)]
+let Iu count people with [birth-region = _region and schizophrenia-exhibited and (is-agent? mother) and (not empty? father) and ([not schizophrenia-exhibited] of mother and not item 1 father)]
 report Ie / (0.00000000001 + Iu)
 end
 
-to-report meanRRSiblings
-let Ie count people with [schizophrenia-exhibited and (is-agent? mother) and (is-agent? father) and (any? other people with [schizophrenia-exhibited and (mother = [mother] of myself or father = [father] of myself)])]
-let Iu count people with [schizophrenia-exhibited and (is-agent? mother) and (is-agent? father) and (any? other people with [not schizophrenia-exhibited and (mother = [mother] of myself and father = [father] of myself)])]
+to-report meanRRSiblings [_region]
+let Ie count people with [birth-region = _region and schizophrenia-exhibited and (is-agent? mother) and (not empty? father) and (any? other people with [schizophrenia-exhibited and (not empty? father) and (mother = [mother] of myself or (item 2 father) = (item 2 [father] of myself) ) ])]
+let Iu count people with [birth-region = _region and schizophrenia-exhibited and (is-agent? mother) and (not empty? father) and (any? other people with [not schizophrenia-exhibited and (not empty? father) and (mother = [mother] of myself or (item 2 father) = (item 2 [father] of myself))])]
 report Ie / (0.00000000001 + Iu)
 end
