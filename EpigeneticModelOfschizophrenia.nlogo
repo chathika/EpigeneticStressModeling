@@ -196,7 +196,7 @@ end
 ;end
 
 to init-population
-  let NetherlandsInitialPopulationAges csv:from-file "NetherlandsInitialPopulationAges.csv"
+  let NetherlandsInitialPopulationAges csv:from-file "data/NetherlandsInitialPopulationAges.csv"
   set NetherlandsInitialPopulationAges but-first NetherlandsInitialPopulationAges
   let total-pop 0
   foreach NetherlandsInitialPopulationAges [age-group ->
@@ -431,7 +431,7 @@ init-percent-schizophrenia-inherited
 init-percent-schizophrenia-inherited
 0
 100
-9.0
+81.0
 1
 1
 %
@@ -589,7 +589,7 @@ INPUTBOX
 189
 730
 stress-start-year
-1940.0
+1944.0
 1
 0
 Number
@@ -600,7 +600,7 @@ INPUTBOX
 344
 730
 stress-start-month
-1.0
+8.0
 1
 0
 Number
@@ -611,7 +611,7 @@ INPUTBOX
 393
 730
 stress-end-year
-1965.0
+1944.0
 1
 0
 Number
@@ -636,7 +636,7 @@ inheretence-augmentation-by-shock
 inheretence-augmentation-by-shock
 0
 10000000000
-0.0
+1.0E10
 1
 1
 NIL
