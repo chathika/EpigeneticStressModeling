@@ -1035,10 +1035,59 @@ false
 Polygon -7500403 true true 270 75 225 30 30 225 75 270
 Polygon -7500403 true true 30 75 75 30 270 225 225 270
 @#$#@#$#@
-NetLogo 6.0.4
+NetLogo 6.0.2
 @#$#@#$#@
 @#$#@#$#@
 @#$#@#$#@
+<experiments>
+  <experiment name="experiment" repetitions="1" runMetricsEveryStep="true">
+    <setup>setup</setup>
+    <go>go</go>
+    <metric>count turtles</metric>
+    <enumeratedValueSet variable="scale">
+      <value value="5000"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="stress-end-month">
+      <value value="12"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="schizophrenia-exhibit-uninherited-threshold">
+      <value value="0"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="stress-start-year">
+      <value value="1944"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="schizophrenia-inherit-threshold">
+      <value value="1.0E-4"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="inheretence-augmentation-by-shock">
+      <value value="10000000000"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="init-percent-schizophrenia-inherited">
+      <value value="81"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="stress-end-year">
+      <value value="1944"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="use-stress?">
+      <value value="true"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="stress-start-month">
+      <value value="8"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="init-percent-schizophrenia-exhibited">
+      <value value="50"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="schizophrenia-exhibit-inherited-threshold">
+      <value value="1"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="schizophrenia-via-social-interaction-threshold">
+      <value value="0"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="stop-year">
+      <value value="2018"/>
+    </enumeratedValueSet>
+  </experiment>
+</experiments>
 @#$#@#$#@
 @#$#@#$#@
 default
