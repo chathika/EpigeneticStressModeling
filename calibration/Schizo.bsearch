@@ -9,7 +9,7 @@
 <modelStopCondition>year = 2014</modelStopCondition>
 <modelStepLimit>888</modelStepLimit>
 <modelMetricReporter>sqrt ( (meanRRParents - 7.26) ^ 2 + ( meanRRSiblings - 8.58) ^ 2)</modelMetricReporter>
-<modelMeasureIf>year &gt; 1944</modelMeasureIf>
+<modelMeasureIf>year &gt; 1943</modelMeasureIf>
 </modelInfo>
 <fitnessInfo>
 <fitnessMinimized>true</fitnessMinimized>
@@ -19,8 +19,8 @@
 </fitnessInfo>
 <searchSpace>
 <paramSpec>["scale" 5000]</paramSpec>
-<paramSpec>["init-percent-schizophrenia-inherited" [0 10 50]]</paramSpec>
-<paramSpec>["init-percent-schizophrenia-exhibited" [0 10 50]]</paramSpec>
+<paramSpec>["init-percent-schizophrenia-inherited" 10 ]</paramSpec>
+<paramSpec>["init-percent-schizophrenia-exhibited" 50]</paramSpec>
 <paramSpec>["schizophrenia-inherit-threshold" [0 0.0001 1]]</paramSpec>
 <paramSpec>["schizophrenia-via-social-interaction-threshold" [0 1 50]]</paramSpec>
 <paramSpec>["schizophrenia-exhibit-inherited-threshold" [0 0.0001 1]]</paramSpec>
@@ -30,7 +30,7 @@
 <paramSpec>["stress-start-month" 1]</paramSpec>
 <paramSpec>["stress-end-year" 1944]</paramSpec>
 <paramSpec>["stress-end-month" 12]</paramSpec>
-<paramSpec>["inheretence-augmentation-by-shock" [1 1 10000]]</paramSpec>
+<paramSpec>["inheretence-augmentation-by-shock" [1 10 10000]]</paramSpec>
 <paramSpec>["use-stress?" true]</paramSpec>
 </searchSpace>
 <searchMethod type="StandardGA">
